@@ -1,0 +1,4 @@
+---
+# Without this, Ansible runs the role once per play no matter how many
+# times it is included with different vars.
+allow_duplicates: true

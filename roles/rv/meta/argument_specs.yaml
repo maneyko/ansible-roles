@@ -1,0 +1,18 @@
+---
+argument_specs:
+  main:
+    short_description: Install rv and a shared Ruby toolchain under {{ rv_home }}
+    options:
+      rv_users:
+        type: list
+        elements: str
+        default: []
+        description: Users added to the rv group, granting write access to rv_home.
+      rv_home:
+        type: path
+        default: /opt/rv
+        description: Group-writable root for the rv cache and installed rubies.
+      rv_rubies_link:
+        type: path
+        default: /opt/rubies
+        description: Symlink pointing at rv_home/rubies, for tools expecting chruby layout.

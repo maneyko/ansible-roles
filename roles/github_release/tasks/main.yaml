@@ -1,0 +1,26 @@
+---
+- name: Pull {{ github_release_repo }}
+  script:
+    creates: /usr/local/bin/{{ github_release_exec }}
+    cmd: |
+      github-download-release.sh {{ github_release_repo }} '{{ github_release_filter }}' {{ github_release_version }}
+  register: github_release_download
+
+- name: Install {{ github_release_repo }}
+  when: github_release_download is not skipped
+  shell:
+    creates: /usr/local/bin/{{ github_release_exec }}
+    cmd: |
+      f="{{ github_release_download.stdout }}"
+      cd "$(dirname "$f")"
+      {{ github_release_extract }} "$f"
+      {{ github_release_find }} | while read line; do
+        mv "$line" /usr/local/bin/
+      done
+      {{ github_release_extra_cmd }}
+
+- name: Remove {{ github_release_repo }} artifacts
+  when: github_release_download is not skipped
+  file:
+    path: "{{ github_release_download.stdout | ansible.builtin.dirname }}"
+    state: absent

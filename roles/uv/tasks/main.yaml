@@ -1,0 +1,42 @@
+---
+- name: Install uv binary
+  include_role:
+    name: maneyko.roles.github_release
+  vars:
+    github_release_repo:   astral-sh/uv
+    github_release_exec:   uv
+    github_release_filter: startswith("uv-\($uname_m)-") and endswith("linux-gnu.tar.gz")
+    github_release_find:   find */{uv,uvx}
+
+- name: Create uv group
+  group:
+    name: uv
+
+- name: Add users to uv group
+  loop: "{{ uv_users }}"
+  user:
+    name: "{{ item }}"
+    groups: uv
+    append: true
+
+- name: Create uv directory
+  file:
+    state: directory
+    path:  "{{ uv_home }}"
+    mode:  'g+srw,o='
+    group: uv
+
+- name: Set up uv profile
+  copy:
+    dest: /etc/profile.d/uv.sh
+    content: |
+      export UV_CACHE_DIR={{ uv_home }}/cache
+      export UV_INSTALL_DIR=/usr/local/bin
+      export UV_PYTHON_BIN_DIR={{ uv_home }}/py-bin
+      export UV_PYTHON_INSTALL_DIR={{ uv_home }}/python
+      uv() { (umask 002 && command uv "$@"); }
+
+- name: Install uv Python
+  command:
+    creates: "{{ uv_home }}/cache"
+    cmd: uv python install

@@ -1,0 +1,4 @@
+---
+github_release_version: latest
+github_release_extract: tar -vxf
+github_release_extra_cmd: 'true'

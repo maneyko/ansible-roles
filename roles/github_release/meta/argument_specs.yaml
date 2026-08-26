@@ -1,0 +1,45 @@
+---
+argument_specs:
+  main:
+    short_description: Install a binary from a GitHub release tarball
+    options:
+      github_release_repo:
+        type: str
+        required: true
+        description: GitHub repo as owner/name, e.g. astral-sh/uv
+
+      github_release_exec:
+        type: str
+        required: true
+        description: >-
+          Name of the installed binary. Doubles as the idempotency marker:
+          the role does nothing if /usr/local/bin/<exec> already exists.
+
+      github_release_filter:
+        type: str
+        required: true
+        description: >-
+          jq boolean expression selecting the release asset, evaluated against
+          .name with $deb_arch and $uname_m in scope.
+
+      github_release_find:
+        type: str
+        required: true
+        description: >-
+          Shell command run inside the unpacked archive, printing one path per
+          line. Each is moved into /usr/local/bin.
+
+      github_release_version:
+        type: str
+        default: latest
+        description: Release tag, or "latest".
+
+      github_release_extract:
+        type: str
+        default: tar -vxf
+        description: Extraction command, given the archive path as final argument.
+
+      github_release_extra_cmd:
+        type: str
+        default: 'true'
+        description: Shell run after installation, inside the unpacked archive.

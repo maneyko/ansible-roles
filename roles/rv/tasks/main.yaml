@@ -1,0 +1,46 @@
+---
+- name: Install rv binary
+  include_role:
+    name: maneyko.roles.github_release
+  vars:
+    github_release_repo:   spinel-coop/rv
+    github_release_exec:   rv
+    github_release_filter: startswith("rv-\($uname_m)-") and endswith("linux-gnu.tar.xz")
+    github_release_find:   find */{rv,rvx}
+
+- name: Create rv group
+  group:
+    name: rv
+
+- name: Add users to rv group
+  loop: "{{ rv_users }}"
+  user:
+    name: "{{ item }}"
+    groups: rv
+    append: true
+
+- name: Create rv directory
+  file:
+    state: directory
+    path:  "{{ rv_home }}"
+    mode:  'g+srw,o='
+    group: rv
+
+- name: Set up rv profile
+  copy:
+    dest: /etc/profile.d/rv.sh
+    content: |
+      export RV_INSTALL_PATH={{ rv_home }}
+      export RV_CACHE_DIR={{ rv_home }}
+      rv() { (umask 002 && command rv "$@"); }
+
+- name: Install rv Ruby
+  command:
+    creates: "{{ rv_home }}/rubies"
+    cmd: rv ruby install --install-dir {{ rv_home }}/rubies
+
+- name: Link rv rubies directory
+  file:
+    src:   "{{ rv_home }}/rubies"
+    dest:  "{{ rv_rubies_link }}"
+    state: link
