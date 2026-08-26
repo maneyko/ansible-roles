@@ -3,10 +3,10 @@
 set -e
 
 repo=$1
-jq_match=$2
-version=${3:-latest}
+version=${2:-latest}
 
-[[ -n $jq_match ]] || jq_match=$(cat)
+jq_match=$(cat)
+
 if [[ $version != latest ]]; then version="tags/$version"; fi
 
 deb_arch=$(dpkg --print-architecture)

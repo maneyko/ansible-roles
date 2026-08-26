@@ -1,9 +1,17 @@
 ---
+- name: Upload GitHub release downloader
+  copy:
+    src:  github-download-release.sh
+    dest: /usr/local/bin/github-download-release.sh
+    mode: '0755'
+
+# The jq filter goes over stdin, not argv: the inventory's `sudo --login`
+# adds a second shell expansion pass that strips quoting and eats $uname_m.
 - name: Pull {{ github_release_repo }}
-  script:
+  command:
     creates: /usr/local/bin/{{ github_release_exec }}
-    cmd: |
-      github-download-release.sh {{ github_release_repo }} '{{ github_release_filter }}' {{ github_release_version }}
+    cmd: github-download-release.sh {{ github_release_repo }} {{ github_release_version }}
+    stdin: "{{ github_release_filter }}"
   register: github_release_download
 
 - name: Install {{ github_release_repo }}
