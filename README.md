@@ -11,6 +11,7 @@ Personal Ansible collection.
 | `nginx_common` | The TLS snippets every NGINX site includes |
 | `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
 | `baresip` | Headless SIP client, built from source |
+| `ntfy_server` | ntfy behind NGINX, as a pub-sub notification server |
 
 Each role's inputs are declared in `roles/<name>/meta/argument_specs.yaml` and
 validated before the role runs:
