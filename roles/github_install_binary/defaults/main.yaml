@@ -1,0 +1,5 @@
+---
+github_install_binary_dest: /usr/local/bin
+github_install_binary_version: latest
+github_install_binary_extract: tar -vxf
+github_install_binary_extra_cmd: 'true'

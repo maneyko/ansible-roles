@@ -1,12 +1,12 @@
 ---
 - name: Install rv binary
   include_role:
-    name: maneyko.roles.github_release
+    name: maneyko.roles.github_install_binary
   vars:
-    github_release_repo:   spinel-coop/rv
-    github_release_exec:   rv
-    github_release_filter: startswith("rv-\($uname_m)-") and endswith("linux-gnu.tar.xz")
-    github_release_find:   find */{rv,rvx}
+    github_install_binary_repo:   spinel-coop/rv
+    github_install_binary_exec:   rv
+    github_install_binary_filter: startswith("rv-\($uname_m)-") and endswith("linux-gnu.tar.xz")
+    github_install_binary_find:   find */{rv,rvx}
 
 - name: Create rv group
   group:

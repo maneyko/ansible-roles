@@ -1,13 +1,4 @@
 ---
-- name: Install uv binary
-  include_role:
-    name: maneyko.roles.github_release
-  vars:
-    github_release_repo:   astral-sh/uv
-    github_release_exec:   uv
-    github_release_filter: startswith("uv-\($uname_m)-") and endswith("linux-gnu.tar.gz")
-    github_release_find:   find */{uv,uvx}
-
 - name: Create uv group
   group:
     name: uv
@@ -19,24 +10,57 @@
     groups: uv
     append: true
 
-- name: Create uv directory
+# o= on uv_home is deliberate: with the real binary inside it, uv is unusable
+# by anyone outside the uv group, rather than usable but unable to write the
+# cache. Group-writable because a shared cache has many writers.
+- name: Create uv directories
+  loop:
+    - "{{ uv_home }}"
+    - "{{ uv_home }}/cache"
+    - "{{ uv_home }}/python"
+    - "{{ uv_home }}/py-bin"
+    - "{{ uv_home }}/libexec/bin"
   file:
     state: directory
-    path:  "{{ uv_home }}"
+    path:  "{{ item }}"
     mode:  'g+srw,o='
     group: uv
 
-- name: Set up uv profile
+- name: Install uv binary
+  include_role:
+    name: maneyko.roles.github_install_binary
+  vars:
+    github_install_binary_repo:   astral-sh/uv
+    github_install_binary_exec:   uv
+    github_install_binary_dest:   "{{ uv_home }}/libexec/bin"
+    github_install_binary_filter: startswith("uv-\($uname_m)-") and endswith("linux-gnu.tar.gz")
+    github_install_binary_find:   find */{uv,uvx}
+
+# The only thing on PATH. Every caller -- login shell, systemd unit, this role
+# -- gets the shared toolchain and a umask that keeps the cache writable by the
+# group, without any of them naming a UV_ variable. Ansible cannot rely on the
+# equivalent shell function: exports survive into a module's subprocess, shell
+# functions do not, which is how the cache came to be group-readable only.
+- name: Install uv shims
+  loop: [uv, uvx]
   copy:
-    dest: /etc/profile.d/uv.sh
+    dest: /usr/local/bin/{{ item }}
+    mode: '0755'
     content: |
+      #!/bin/sh
+      umask 0002
       export UV_CACHE_DIR={{ uv_home }}/cache
-      export UV_INSTALL_DIR=/usr/local/bin
-      export UV_PYTHON_BIN_DIR={{ uv_home }}/py-bin
       export UV_PYTHON_INSTALL_DIR={{ uv_home }}/python
-      uv() { (umask 002 && command uv "$@"); }
+      export UV_PYTHON_BIN_DIR={{ uv_home }}/py-bin
+      exec {{ uv_home }}/libexec/bin/{{ item }} "$@"
+
+# Superseded by the shim, which every caller reaches without sourcing anything.
+- name: Remove the uv profile
+  file:
+    path: /etc/profile.d/uv.sh
+    state: absent
 
 - name: Install uv Python
   command:
-    creates: "{{ uv_home }}/cache"
+    creates: "{{ uv_home }}/python/*"
     cmd: uv python install

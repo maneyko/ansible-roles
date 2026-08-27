@@ -7,8 +7,12 @@ argument_specs:
         type: list
         elements: str
         default: []
-        description: Users added to the uv group, granting write access to uv_home.
+        description: >-
+          Users added to the uv group. Membership is required to run uv at all,
+          not just to write the cache: the binary lives inside uv_home.
       uv_home:
         type: path
         default: /opt/uv
-        description: Group-writable root for the uv cache and installed Pythons.
+        description: >-
+          Group-writable root for the uv binary, its cache and its Pythons.
+          /usr/local/bin/uv is a shim that points every caller here.

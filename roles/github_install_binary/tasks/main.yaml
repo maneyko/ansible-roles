@@ -1,0 +1,39 @@
+---
+- name: Upload GitHub release downloader
+  copy:
+    src:  github-download-release.sh
+    dest: /usr/local/bin/github-download-release.sh
+    mode: '0755'
+
+- name: Create {{ github_install_binary_repo }} install directory
+  file:
+    state: directory
+    path:  "{{ github_install_binary_dest }}"
+
+# The jq filter goes over stdin, not argv: the inventory's `sudo --login`
+# adds a second shell expansion pass that strips quoting and eats $uname_m.
+- name: Pull {{ github_install_binary_repo }}
+  command:
+    creates: "{{ github_install_binary_dest }}/{{ github_install_binary_exec }}"
+    cmd: github-download-release.sh {{ github_install_binary_repo }} {{ github_install_binary_version }}
+    stdin: "{{ github_install_binary_filter }}"
+  register: github_install_binary_download
+
+- name: Install {{ github_install_binary_repo }}
+  when: github_install_binary_download is not skipped
+  shell:
+    creates: "{{ github_install_binary_dest }}/{{ github_install_binary_exec }}"
+    cmd: |
+      f="{{ github_install_binary_download.stdout }}"
+      cd "$(dirname "$f")"
+      {{ github_install_binary_extract }} "$f"
+      {{ github_install_binary_find }} | while read line; do
+        mv "$line" {{ github_install_binary_dest }}/
+      done
+      {{ github_install_binary_extra_cmd }}
+
+- name: Remove {{ github_install_binary_repo }} artifacts
+  when: github_install_binary_download is not skipped
+  file:
+    path: "{{ github_install_binary_download.stdout | ansible.builtin.dirname }}"
+    state: absent
