@@ -37,6 +37,8 @@ ansible-galaxy collection install -r requirements.yml
 
 ## How `uv` is wired up
 
+`rv` is wired up the same way; read `uv` below and substitute.
+
 The real binary lives at `/opt/uv/libexec/bin/uv` and `/usr/local/bin/uv` is a
 shim:
 
@@ -62,6 +64,13 @@ the cache first came to be group-readable but not group-writable.
 `/opt/uv` is `o=`, so uv is unusable outside the `uv` group rather than usable
 but unable to write. Every service that runs Python through uv belongs in
 `uv_users`.
+
+The one asymmetry: `rv` reads `RUBIES_PATH` and nothing else. The
+`RV_INSTALL_PATH` and `RV_CACHE_DIR` its profile used to export were never
+consulted by `rv` at all — `rv ruby dir` ignored them and only the explicit
+`--install-dir` on the install command was keeping rubies out of
+`~/.local/share/rv`. The shim exports the variable that works, so every `rv`
+subcommand now agrees on where rubies live.
 
 ## Why a collection and not a bare roles repo
 

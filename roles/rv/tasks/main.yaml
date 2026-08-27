@@ -1,13 +1,4 @@
 ---
-- name: Install rv binary
-  include_role:
-    name: maneyko.roles.github_install_binary
-  vars:
-    github_install_binary_repo:   spinel-coop/rv
-    github_install_binary_exec:   rv
-    github_install_binary_filter: startswith("rv-\($uname_m)-") and endswith("linux-gnu.tar.xz")
-    github_install_binary_find:   find */{rv,rvx}
-
 - name: Create rv group
   group:
     name: rv
@@ -19,25 +10,66 @@
     groups: rv
     append: true
 
-- name: Create rv directory
+# o= on rv_home is deliberate: with the real binary inside it, rv is unusable
+# by anyone outside the rv group, rather than usable but unable to write the
+# rubies. Group-writable because gems are installed into the ruby it belongs to.
+- name: Create rv directories
+  loop:
+    - "{{ rv_home }}"
+    - "{{ rv_home }}/rubies"
+    - "{{ rv_home }}/libexec/bin"
   file:
     state: directory
-    path:  "{{ rv_home }}"
+    path:  "{{ item }}"
     mode:  'g+srw,o='
     group: rv
 
-- name: Set up rv profile
+- name: Install rv binary
+  include_role:
+    name: maneyko.roles.github_install_binary
+  vars:
+    github_install_binary_repo:   spinel-coop/rv
+    github_install_binary_exec:   rv
+    github_install_binary_dest:   "{{ rv_home }}/libexec/bin"
+    github_install_binary_filter: startswith("rv-\($uname_m)-") and endswith("linux-gnu.tar.xz")
+    github_install_binary_find:   find */{rv,rvx}
+
+# The only thing on PATH, for the same reasons as the uv shim. RUBIES_PATH is
+# the one variable rv actually reads -- the RV_INSTALL_PATH and RV_CACHE_DIR
+# this replaces were never consulted, and only --install-dir was holding the
+# shared location together.
+- name: Install rv shims
+  loop: [rv, rvx]
   copy:
-    dest: /etc/profile.d/rv.sh
+    dest: /usr/local/bin/{{ item }}
+    mode: '0755'
     content: |
-      export RV_INSTALL_PATH={{ rv_home }}
-      export RV_CACHE_DIR={{ rv_home }}
-      rv() { (umask 002 && command rv "$@"); }
+      #!/bin/sh
+      umask 0002
+      export RUBIES_PATH={{ rv_home }}/rubies
+      exec {{ rv_home }}/libexec/bin/{{ item }} "$@"
+
+- name: Remove the rv profile
+  file:
+    path: /etc/profile.d/rv.sh
+    state: absent
 
 - name: Install rv Ruby
   command:
-    creates: "{{ rv_home }}/rubies"
-    cmd: rv ruby install --install-dir {{ rv_home }}/rubies
+    creates: "{{ rv_home }}/rubies/*"
+    cmd: rv ruby install
+
+# rv extracts the tarball as root, so the interpreter arrives root:root 0755 and
+# no group member can install a gem into it. Directories become group-writable
+# and setgid, which is enough to create, replace and delete gems; the shipped
+# files stay read-only, so sharing a ruby does not mean sharing the ability to
+# rewrite its stdlib.
+- name: Make installed rubies group-writable
+  changed_when: false
+  shell: |
+    chgrp -R rv {{ rv_home }}/rubies
+    find {{ rv_home }}/rubies -type d -exec chmod g+rwxs {} +
+    find {{ rv_home }}/rubies -type f -exec chmod g+r {} +
 
 - name: Link rv rubies directory
   file:

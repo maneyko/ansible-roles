@@ -7,11 +7,15 @@ argument_specs:
         type: list
         elements: str
         default: []
-        description: Users added to the rv group, granting write access to rv_home.
+        description: >-
+          Users added to the rv group. Membership is required to run rv at all,
+          not just to write the rubies: the binary lives inside rv_home.
       rv_home:
         type: path
         default: /opt/rv
-        description: Group-writable root for the rv cache and installed rubies.
+        description: >-
+          Group-writable root for the rv binary and the rubies it installs.
+          /usr/local/bin/rv is a shim that points every caller here.
       rv_rubies_link:
         type: path
         default: /opt/rubies
