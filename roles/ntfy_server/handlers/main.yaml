@@ -1,0 +1,11 @@
+---
+- name: Restart ntfy
+  systemd_service:
+    name: ntfy
+    daemon_reload: true
+    state: restarted
+
+- name: Reload NGINX
+  systemd_service:
+    name: nginx
+    state: reloaded

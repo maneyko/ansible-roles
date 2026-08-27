@@ -1,0 +1,26 @@
+[Unit]
+Description=ntfy server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ntfy
+Group=ntfy
+ExecStart=/usr/local/bin/ntfy serve --no-log-dates
+ExecReload=/bin/kill --signal HUP $MAINPID
+Restart=on-failure
+LimitNOFILE=10000
+
+# ntfy listens on a high port behind NGINX, so it never needs to bind :80.
+PrivateDevices=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

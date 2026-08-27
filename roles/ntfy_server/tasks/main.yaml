@@ -1,0 +1,65 @@
+---
+- name: Create ntfy user
+  user:
+    name: ntfy
+    create_home: true
+    home: /var/lib/ntfy
+    system: true
+    shell: /usr/sbin/nologin
+    comment: User for the simple HTTP-based pub-sub notification service
+
+- name: Create ntfy config directory
+  file:
+    state: directory
+    path: /etc/ntfy
+    mode: '0755'
+
+- name: Install ntfy
+  include_role:
+    name: maneyko.roles.github_install_binary
+  vars:
+    github_install_binary_repo:   binwiederhier/ntfy
+    github_install_binary_exec:   ntfy
+    github_install_binary_filter: endswith("linux_\($deb_arch).tar.gz")
+    github_install_binary_find:   find ntfy_*/ -maxdepth 1 -type f -name ntfy
+
+# Ours, not the one in the release tarball: that one is written for a distro
+# package at /usr/bin and only became correct here after an awk rewrite, which
+# ran solely on the install that fetched it. This one is a file, so a change to
+# it applies on the next run like everything else.
+- name: Install ntfy unit
+  notify: Restart ntfy
+  copy:
+    src:  ntfy.service
+    dest: /etc/systemd/system/ntfy.service
+    mode: '0644'
+
+- name: Write ntfy config
+  notify: Restart ntfy
+  template:
+    src:  server.yml.j2
+    dest: /etc/ntfy/server.yml
+    mode: '0644'
+
+- name: Write ntfy NGINX site
+  notify: Reload NGINX
+  template:
+    src:  nginx.conf.j2
+    dest: /etc/nginx/sites-enabled/ntfy.conf
+    mode: '0644'
+
+- name: Write ntfy NGINX local snippet
+  notify: Reload NGINX
+  no_log: true
+  copy:
+    content: "{{ ntfy_server_local_conf }}"
+    dest: /etc/nginx/snippets/ntfy.local.conf
+    mode: '0640'
+    group: www-data
+
+- name: Enable ntfy service
+  systemd_service:
+    name: ntfy
+    daemon_reload: true
+    enabled: true
+    state: started

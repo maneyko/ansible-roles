@@ -1,0 +1,31 @@
+---
+argument_specs:
+  main:
+    short_description: Run ntfy behind NGINX as a pub-sub notification server
+    options:
+      ntfy_server_domain:
+        type: str
+        required: true
+        description: Public hostname. Drives both the NGINX server_name and ntfy's base-url.
+      ntfy_server_ssl_snippet:
+        type: str
+        required: true
+        description: >-
+          NGINX snippet under /etc/nginx/snippets holding the certificate that
+          covers ntfy_server_domain, e.g. ssl-maneyko.com.conf for a wildcard
+          issued to its parent.
+      ntfy_server_local_conf:
+        type: str
+        required: true
+        no_log: true
+        description: >-
+          NGINX snippet included by the publish-only server block, kept out of
+          the repo because it names a private host.
+      ntfy_server_listen:
+        type: str
+        default: 127.0.0.1:2586
+        description: Address ntfy listens on, and the NGINX proxy_pass target.
+      ntfy_server_upstream:
+        type: str
+        default: https://ntfy.sh
+        description: Upstream ntfy instance used to forward iOS push notifications.
