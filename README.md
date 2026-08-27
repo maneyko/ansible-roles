@@ -77,6 +77,30 @@ consulted by `rv` at all — `rv ruby dir` ignored them and only the explicit
 `~/.local/share/rv`. The shim exports the variable that works, so every `rv`
 subcommand now agrees on where rubies live.
 
+## Which NGINX files belong to the host
+
+The test is whether a file would still make sense if the site that first needed
+it were deleted. If yes it belongs here, in `nginx_common`; if no it belongs to
+the site's own repo.
+
+| Owner | Files |
+|---|---|
+| `nginx_common` | `options-ssl-nginx.conf`, `ssl-dhparams.pem`, `proxy-headers.conf`, `conf.d/log-formats.conf`, `default-cert.conf`, `zz-fallback.conf` |
+| the site repo | `<domain>.conf`, `snippets/ssl-<domain>.conf`, `config/deploy.yaml` |
+| a role, from a variable | `ntfy.local.conf`, `pyapp.local.conf` and anything else holding a secret |
+| the `nginx-common` Debian package | `fastcgi-php.conf` |
+
+Three of those moved out of the `maneyko.com` repo, where they had ended up
+because that is where they were first needed. `proxy-headers.conf` names no
+site. `log_format apm` is an `http`-level directive that only worked from a
+site config because `sites-enabled/*` loads alphabetically and that file sorted
+early; from `conf.d/` it is available to everyone. The catch-all `zz-fallback`
+server is a property of the machine, and was never linked at all.
+
+`default-cert.conf` is the certificate for services that belong to the host
+rather than to a site -- ntfy, pyapp, the catch-all. They include it by name, so
+none of them depends on a website repo being deployed first.
+
 ## Why `lego` renews from `renew.d` and not from `certificates`
 
 `/etc/lego/renew.d/<domain>.env` names a domain's SANs and its DNS provider;

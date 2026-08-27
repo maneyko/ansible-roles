@@ -1,4 +1,12 @@
 ---
 argument_specs:
   main:
-    short_description: Install the TLS snippets every NGINX site includes
+    short_description: Host-wide NGINX config - log formats, shared snippets, catch-all
+    options:
+      nginx_common_cert_domain:
+        type: str
+        required: true
+        description: >-
+          Domain whose certificate serves the host's own services. Written to
+          snippets/default-cert.conf, which they include by name so that none
+          of them depends on a website repo being deployed first.

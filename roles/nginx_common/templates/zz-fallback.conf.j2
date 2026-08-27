@@ -1,0 +1,26 @@
+# Anything that reaches this host under a name nobody claims. Sorts last so a
+# real site always wins the default_server race.
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    access_log /var/log/nginx/rejected_requests.log apm;
+    error_log  /var/log/nginx/rejected_requests_error.log;
+
+    return 444;
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name _;
+
+    include snippets/default-cert.conf;
+
+    access_log /var/log/nginx/rejected_requests.log apm;
+    error_log  /var/log/nginx/rejected_requests_error.log;
+
+    return 444;
+}

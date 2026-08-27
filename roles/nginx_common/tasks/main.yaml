@@ -15,3 +15,42 @@
   command:
     creates: /etc/nginx/snippets/ssl-dhparams.pem
     cmd: openssl dhparam -out /etc/nginx/snippets/ssl-dhparams.pem 2048
+
+# log_format is an http-level directive, and conf.d loads before sites-enabled.
+# Defined inside a site config it is only available to files that sort after it.
+- name: Install NGINX log formats
+  notify: Reload NGINX
+  copy:
+    src:  log-formats.conf
+    dest: /etc/nginx/conf.d/log-formats.conf
+    mode: '0644'
+
+# Nothing in here names a site, which is the test for belonging to the host.
+- name: Install shared NGINX snippets
+  loop: [proxy-headers.conf]
+  notify: Reload NGINX
+  copy:
+    src:  "{{ item }}"
+    dest: /etc/nginx/snippets/{{ item }}
+    mode: '0644'
+
+- name: Install the host certificate snippet
+  notify: Reload NGINX
+  template:
+    src:  default-cert.conf.j2
+    dest: /etc/nginx/snippets/default-cert.conf
+    mode: '0644'
+
+- name: Install the catch-all site
+  notify: Reload NGINX
+  template:
+    src:  zz-fallback.conf.j2
+    dest: /etc/nginx/sites-enabled/zz-fallback.conf
+    mode: '0644'
+
+# Debian ships a default_server of its own that would answer first.
+- name: Remove the distribution default site
+  notify: Reload NGINX
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent

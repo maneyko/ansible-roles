@@ -1,0 +1,7 @@
+# The certificate for services belonging to the host rather than to a site of
+# their own -- ntfy, pyapp, the catch-all server. Sites bring their own
+# ssl-<domain>.conf.
+ssl_certificate     /etc/lego/certificates/{{ nginx_common_cert_domain }}.crt;
+ssl_certificate_key /etc/lego/certificates/{{ nginx_common_cert_domain }}.key;
+
+include snippets/options-ssl-nginx.conf;
