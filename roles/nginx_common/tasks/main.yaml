@@ -1,4 +1,10 @@
 ---
+# snippets/snakeoil.conf ships with nginx-common but points at a key the
+# ssl-cert package generates.
+- name: Install the self-signed certificate the catch-all serves
+  apt:
+    pkg: [ssl-cert]
+
 - name: Create NGINX snippets directory
   file:
     state: directory

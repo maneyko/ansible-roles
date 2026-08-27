@@ -17,7 +17,10 @@ server {
     listen [::]:443 ssl default_server;
     server_name _;
 
-    include snippets/default-cert.conf;
+    # Self-signed on purpose: this block answers names nobody claims, so it
+    # never presents a real certificate, and it must not wait for one to be
+    # issued before nginx can start.
+    include snippets/snakeoil.conf;
 
     access_log /var/log/nginx/rejected_requests.log apm;
     error_log  /var/log/nginx/rejected_requests_error.log;
