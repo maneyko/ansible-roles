@@ -1,0 +1,17 @@
+---
+- name: Create NGINX snippets directory
+  file:
+    state: directory
+    path: /etc/nginx/snippets
+
+# Certbot's, because it is the one that gets updated when a cipher falls out of
+# favour. Tracking main means a run can change it; that is the point.
+- name: Download options-ssl-nginx.conf
+  get_url:
+    dest: /etc/nginx/snippets/
+    url: https://raw.githubusercontent.com/certbot/certbot/refs/heads/main/certbot/src/certbot/_internal/plugins/nginx/tls_configs/options-ssl-nginx.conf
+
+- name: Create ssl-dhparams.pem
+  command:
+    creates: /etc/nginx/snippets/ssl-dhparams.pem
+    cmd: openssl dhparam -out /etc/nginx/snippets/ssl-dhparams.pem 2048

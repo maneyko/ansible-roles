@@ -1,0 +1,12 @@
+---
+argument_specs:
+  main:
+    short_description: Build baresip from source and run it as a headless SIP client
+    options:
+      baresip_accounts:
+        type: str
+        required: true
+        no_log: true
+        description: >-
+          Contents of /etc/baresip/accounts, one SIP account per line, as
+          baresip parses it.

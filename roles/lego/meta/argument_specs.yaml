@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: Install lego and a daily renewal timer, certificates under /etc/lego
+    options:
+      lego_credentials:
+        type: dict
+        required: true
+        no_log: true
+        description: >-
+          DNS provider credentials as lego expects them in the environment,
+          e.g. CLOUDFLARE_DNS_API_TOKEN or IONOS_API_KEY. Every provider named
+          by a renew.d entry needs its credentials here.
+      lego_server:
+        type: str
+        default: letsencrypt-staging
+        description: ACME server, as lego's LEGO_SERVER shorthand or a full URL.

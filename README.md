@@ -7,6 +7,10 @@ Personal Ansible collection.
 | `github_install_binary` | Install a binary from a GitHub release tarball |
 | `uv` | Install `uv` plus a shared, group-writable Python toolchain |
 | `rv` | Install `rv` plus a shared, group-writable Ruby toolchain |
+| `docker` | Install Docker from Docker's own apt repository |
+| `nginx_common` | The TLS snippets every NGINX site includes |
+| `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
+| `baresip` | Headless SIP client, built from source |
 
 Each role's inputs are declared in `roles/<name>/meta/argument_specs.yaml` and
 validated before the role runs:
@@ -72,10 +76,23 @@ consulted by `rv` at all — `rv ruby dir` ignored them and only the explicit
 `~/.local/share/rv`. The shim exports the variable that works, so every `rv`
 subcommand now agrees on where rubies live.
 
+## Why `lego` renews from `renew.d` and not from `certificates`
+
+`/etc/lego/renew.d/<domain>.env` names a domain's SANs and its DNS provider;
+`/etc/lego/certificates/` holds what was actually issued. Renewal is driven
+from the first, because the second cannot answer the question. A certificate
+records its domains (`certificates/<domain>.json` has a `domains` key) but
+*nothing* records which DNS provider proved them, and a host serving both
+Cloudflare and IONOS domains needs that to renew either. A directory of
+certificates is also, by definition, missing any domain whose issuance failed —
+so renewal driven from it can never retry.
+
+`/etc/lego` is hardcoded throughout, in the role and in the renewal script.
+
 ## Why a collection and not a bare roles repo
 
 `ansible-galaxy role install` treats a git repo as exactly one role, so a repo
-holding three roles cannot be consumed through the `roles:` key of a
+holding several roles cannot be consumed through the `roles:` key of a
 requirements file. Collections are the supported unit for shipping several
-roles from one repo, and they namespace `uv` and `rv`, which are otherwise
-generic enough to collide.
+roles from one repo, and they namespace generic names like `uv`, `docker` and
+`lego`, which would otherwise collide.

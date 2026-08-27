@@ -1,0 +1,13 @@
+[Unit]
+Description=Headless SIP Client (baresip)
+After=network-online.target
+
+[Service]
+User=baresip
+Group=baresip
+ExecStart=/usr/local/bin/baresip -f /etc/baresip -v
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

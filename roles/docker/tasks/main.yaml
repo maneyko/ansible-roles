@@ -1,0 +1,38 @@
+---
+- name: Check system package architecture
+  command: dpkg --print-architecture
+  register: deb_arch
+  changed_when: false
+
+- name: Create apt keyring directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Add Docker official repository
+  deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/debian
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    architectures: "{{ deb_arch.stdout }}"
+    signed_by: https://download.docker.com/linux/debian/gpg
+
+- name: Install Docker
+  apt:
+    update_cache: true
+    pkg: [docker-ce, docker-ce-cli]
+
+- name: Ensure Docker starts at boot
+  systemd_service:
+    name: docker
+    enabled: true
+    state: started
+
+# --rm because this runs on every apply; without it the host collects one
+# exited container per run.
+- name: Test Docker
+  command: docker run --rm hello-world
+  changed_when: false

@@ -1,0 +1,4 @@
+---
+argument_specs:
+  main:
+    short_description: Install the TLS snippets every NGINX site includes

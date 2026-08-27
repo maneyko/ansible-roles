@@ -1,0 +1,51 @@
+---
+- name: Install lego binary
+  include_role:
+    name: maneyko.roles.github_install_binary
+  vars:
+    github_install_binary_repo:   go-acme/lego
+    github_install_binary_exec:   lego
+    github_install_binary_filter: endswith("_linux_\($deb_arch).tar.gz")
+    github_install_binary_find:   find . -type f -name lego | head -1
+
+# renew.d is the desired state -- one file per domain, naming its SANs and its
+# DNS provider. Renewal is driven from it rather than from certificates/, which
+# only records what was successfully issued and so could never retry a domain
+# that failed.
+- name: Create lego directories
+  loop: [/etc/lego, /etc/lego/renew.d]
+  file:
+    state: directory
+    path:  "{{ item }}"
+    mode:  '0755'
+
+- name: Write lego environment
+  no_log: true
+  copy:
+    dest: /etc/lego/env
+    mode: '0600'
+    content: |
+      LEGO_SERVER={{ lego_server }}
+      {% for name, value in lego_credentials.items() %}
+      {{ name }}={{ value }}
+      {% endfor %}
+
+- name: Install lego renewal script
+  copy:
+    src:  lego-renew.sh
+    dest: /etc/lego/lego-renew.sh
+    mode: '0755'
+
+- name: Install lego renewal units
+  loop: [lego-renew.service, lego-renew.timer]
+  copy:
+    src:  "{{ item }}"
+    dest: /etc/systemd/system/{{ item }}
+    mode: '0644'
+
+- name: Enable lego renewal timer
+  systemd_service:
+    name: lego-renew.timer
+    daemon_reload: true
+    enabled: true
+    state: started
