@@ -15,7 +15,7 @@ Personal Ansible collection.
 Each role's inputs are declared in `roles/<name>/meta/argument_specs.yaml` and
 validated before the role runs:
 
-    ansible-doc -t role -M roles maneyko.roles.uv
+    ansible-doc -t role -r roles uv
 
 ## Use
 

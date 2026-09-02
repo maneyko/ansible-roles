@@ -15,7 +15,7 @@ server {
 }
 
 server {
-    include snippets/default-cert.conf;
+    include {{ ntfy_server_cert_snippet }};
 
     server_name {{ ntfy_server_domain }};
 
@@ -41,7 +41,7 @@ server {
 }
 
 server {
-    include snippets/default-cert.conf;
+    include {{ ntfy_server_cert_snippet }};
     include snippets/ntfy.local.conf;
 
     location / {

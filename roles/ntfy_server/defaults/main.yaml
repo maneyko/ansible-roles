@@ -1,3 +1,4 @@
 ---
 ntfy_server_listen: 127.0.0.1:2586
 ntfy_server_upstream: https://ntfy.sh
+ntfy_server_cert_snippet: snippets/default-cert.conf

@@ -3,8 +3,9 @@ argument_specs:
   main:
     short_description: Run ntfy behind NGINX as a pub-sub notification server
     description: >-
-      Serves TLS from snippets/default-cert.conf, so maneyko.roles.nginx_common
-      must have run and its certificate must cover ntfy_server_domain.
+      Serves TLS from ntfy_server_cert_snippet, which must already exist and
+      must cover ntfy_server_domain. maneyko.roles.nginx_common writes the
+      default one, but any certificate source will do.
     options:
       ntfy_server_domain:
         type: str
@@ -25,3 +26,9 @@ argument_specs:
         type: str
         default: https://ntfy.sh
         description: Upstream ntfy instance used to forward iOS push notifications.
+      ntfy_server_cert_snippet:
+        type: str
+        default: snippets/default-cert.conf
+        description: >-
+          NGINX include carrying the certificate for both server blocks,
+          resolved as NGINX resolves it -- relative to /etc/nginx, or absolute.
