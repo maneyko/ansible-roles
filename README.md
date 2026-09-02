@@ -7,7 +7,6 @@ Personal Ansible collection.
 | `github_install_binary` | Install a binary from a GitHub release tarball |
 | `uv` | Install `uv` plus a shared, group-writable Python toolchain |
 | `rv` | Install `rv` plus a shared, group-writable Ruby toolchain |
-| `docker` | Install Docker from Docker's own apt repository |
 | `nginx_common` | The TLS snippets every NGINX site includes |
 | `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
 | `baresip` | Headless SIP client, built from source |
@@ -24,7 +23,7 @@ validated before the role runs:
 
 ```yaml
 collections:
-  - name: git@github.com:maneyko/ansible-roles.git
+  - name: https://github.com/maneyko/ansible-roles.git
     type: git
     version: main
 ```
@@ -119,5 +118,5 @@ so renewal driven from it can never retry.
 `ansible-galaxy role install` treats a git repo as exactly one role, so a repo
 holding several roles cannot be consumed through the `roles:` key of a
 requirements file. Collections are the supported unit for shipping several
-roles from one repo, and they namespace generic names like `uv`, `docker` and
+roles from one repo, and they namespace generic names like `uv`, `rv` and
 `lego`, which would otherwise collide.

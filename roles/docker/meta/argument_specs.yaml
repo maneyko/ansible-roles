@@ -1,4 +1,0 @@
----
-argument_specs:
-  main:
-    short_description: Install Docker from Docker's own apt repository

@@ -1,8 +1,5 @@
 call_local_timeout   120
 call_max_calls       4
-cons_listen          0.0.0.0:5555 # cons
-ctrl_tcp_listen      0.0.0.0:4444 # ctrl_tcp
-http_listen          0.0.0.0:8000 # httpd - server
 
 module_path          /usr/local/lib/baresip/modules
 
