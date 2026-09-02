@@ -1,0 +1,3 @@
+---
+# systemd_service is only a module name, rather than an alias of systemd, from 2.16.
+requires_ansible: '>=2.16.0'

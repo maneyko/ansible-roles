@@ -1,0 +1,6 @@
+---
+# Deliberate house style, not oversights:
+#   fqcn                 - shorthand module names
+#   yaml[colons]         - keys aligned by padding after the colon
+#   galaxy[no-changelog] - no changelog; nobody consumes the old versions
+skip_list: [fqcn, 'yaml[colons]', 'galaxy[no-changelog]']

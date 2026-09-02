@@ -5,8 +5,10 @@
     dest: /usr/local/bin/github-download-release.sh
     mode: '0755'
 
-- name: Create {{ github_install_binary_repo }} install directory
-  file:
+# No mode: this only asserts the directory exists. uv and rv pass a dest they
+# created g+srw,o= themselves, and setting one here would fight them every run.
+- name: Create the install directory for {{ github_install_binary_repo }}
+  file: # noqa: risky-file-permissions
     state: directory
     path:  "{{ github_install_binary_dest }}"
 
@@ -21,7 +23,9 @@
 
 - name: Install {{ github_install_binary_repo }}
   when: github_install_binary_download is not skipped
-  shell:
+  # No pipefail: a _find ending in `head -1`, as lego's does, leaves the find
+  # itself dead of SIGPIPE, which pipefail would report as a failed install.
+  shell: # noqa: risky-shell-pipe
     creates: "{{ github_install_binary_dest }}/{{ github_install_binary_exec }}"
     cmd: |
       f="{{ github_install_binary_download.stdout }}"
@@ -32,7 +36,7 @@
       done
       {{ github_install_binary_extra_cmd }}
 
-- name: Remove {{ github_install_binary_repo }} artifacts
+- name: Remove the build artifacts for {{ github_install_binary_repo }}
   when: github_install_binary_download is not skipped
   file:
     path: "{{ github_install_binary_download.stdout | ansible.builtin.dirname }}"

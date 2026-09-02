@@ -12,6 +12,14 @@ Personal Ansible collection.
 | `baresip` | Headless SIP client, built from source |
 | `ntfy_server` | ntfy behind NGINX, as a pub-sub notification server |
 
+`github_install_binary`, `uv`, `rv` and `lego` are portable — nothing in them
+names a particular host. The other three describe one machine, and are here
+because the reasoning below is worth reading rather than because they offer a
+stable interface: `nginx_common` deletes Debian's default site and tracks
+certbot's `options-ssl-nginx.conf` from `main`, `ntfy_server` wants an NGINX
+snippet naming a private host, and `baresip` builds from source against a
+hardcoded MQTT topic. Expect to fork those three rather than configure them.
+
 Each role's inputs are declared in `roles/<name>/meta/argument_specs.yaml` and
 validated before the role runs:
 

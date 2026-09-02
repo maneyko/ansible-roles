@@ -9,12 +9,14 @@
   file:
     state: directory
     path: /etc/nginx/snippets
+    mode: '0755'
 
 # Certbot's, because it is the one that gets updated when a cipher falls out of
 # favour. Tracking main means a run can change it; that is the point.
 - name: Download options-ssl-nginx.conf
   get_url:
     dest: /etc/nginx/snippets/
+    mode: '0644'
     url: https://raw.githubusercontent.com/certbot/certbot/refs/heads/main/certbot/src/certbot/_internal/plugins/nginx/tls_configs/options-ssl-nginx.conf
 
 - name: Create ssl-dhparams.pem

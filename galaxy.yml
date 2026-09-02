@@ -1,8 +1,11 @@
 namespace: maneyko
 name: roles
-version: 2.0.0
+version: 3.0.0
 readme: README.md
 authors: [maneyko]
 description: Personal Ansible roles
 license: [MIT]
-build_ignore: [.git]
+repository: https://github.com/maneyko/ansible-roles
+issues: https://github.com/maneyko/ansible-roles/issues
+tags: [linux, infrastructure, tools]
+build_ignore: [.git, .gitignore, .ansible-lint]
