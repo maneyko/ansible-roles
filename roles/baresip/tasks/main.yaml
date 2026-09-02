@@ -44,6 +44,7 @@
     mode: '0755'
 
 - name: Install baresip config
+  notify: Restart baresip
   loop: [config, contacts]
   copy:
     src:  "{{ item }}"
@@ -52,6 +53,7 @@
 
 # SIP passwords: readable by the service, by nobody else.
 - name: Install baresip accounts
+  notify: Restart baresip
   no_log: true
   copy:
     content: "{{ baresip_accounts }}"
@@ -60,6 +62,7 @@
     mode:  '0640'
 
 - name: Install baresip unit
+  notify: Restart baresip
   copy:
     src:  baresip.service
     dest: /etc/systemd/system/baresip.service

@@ -17,6 +17,7 @@ module_app           contact.so
 module_app           debug_cmd.so
 module_app           menu.so
 module_app           mqtt.so
+module_app           mwi.so
 
 module_tmp           account.so
 module_tmp           uuid.so

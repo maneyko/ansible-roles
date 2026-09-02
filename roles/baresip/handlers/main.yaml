@@ -1,0 +1,6 @@
+---
+- name: Restart baresip
+  systemd_service:
+    name: baresip
+    daemon_reload: true
+    state: restarted
