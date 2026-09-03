@@ -59,11 +59,37 @@
     creates: "{{ rv_home }}/rubies/*"
     cmd: rv ruby install
 
+- name: Find installed rubies
+  register: rv_rubies
+  find:
+    paths:     "{{ rv_home }}/rubies"
+    file_type: directory
+    recurse:   false
+
+# The sweep below cannot reach gems installed later: RubyGems chmods each file
+# it extracts to the mode in the gem's tar header (Gem::Package#extract_tar_gz)
+# and creates gem directories with the caller's umask, which this role does not
+# set -- bundle runs off PATH, not through the rv shim. site_ruby is on every
+# Ruby's default $LOAD_PATH, where Gem.load_env_plugins finds the hook for both
+# `gem` and `bundle`, with no version in the path and no variable to export.
+- name: Create rv Ruby site directories
+  loop: "{{ rv_rubies.files | map(attribute='path') | sort }}"
+  file:
+    state: directory
+    path:  "{{ item }}/lib/ruby/site_ruby"
+
+- name: Install the RubyGems group-access hook
+  loop: "{{ rv_rubies.files | map(attribute='path') | sort }}"
+  copy:
+    src:  rubygems_plugin.rb
+    dest: "{{ item }}/lib/ruby/site_ruby/rubygems_plugin.rb"
+
 # rv extracts the tarball as root, so the interpreter arrives root:root 0755 and
 # no group member can install a gem into it. Directories become group-writable
 # and setgid, which is enough to create, replace and delete gems; the shipped
 # files stay read-only, so sharing a ruby does not mean sharing the ability to
-# rewrite its stdlib.
+# rewrite its stdlib. Gem files are the exception: the hook above keeps them
+# group-writable, so a gem can be repaired in place and not only replaced.
 - name: Make installed rubies group-writable
   changed_when: false
   shell: |
