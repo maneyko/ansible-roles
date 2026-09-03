@@ -1,6 +1,14 @@
 call_local_timeout   120
 call_max_calls       4
 
+# Register over TCP so inbound INVITEs are not a UDP datagram. A PSTN call
+# carries a STIR/SHAKEN Identity header of ~700 bytes, which puts the INVITE
+# over the MTU; it then arrives IP-fragmented, and a cloud firewall drops every
+# fragment after the first because only the first carries UDP ports. baresip is
+# handed nothing, so it neither logs nor replies, and the registrar retransmits
+# until it gives up.
+sip_trans_def        tcp
+
 module_path          /usr/local/lib/baresip/modules
 
 module               g711.so
