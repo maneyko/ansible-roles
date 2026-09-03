@@ -1,0 +1,19 @@
+---
+- name: Install journal rotation service
+  template:
+    src:  journalctl-vacuum.service.j2
+    dest: /etc/systemd/system/journalctl-vacuum.service
+    mode: '0644'
+
+- name: Install journal rotation timer
+  copy:
+    src:  journalctl-vacuum.timer
+    dest: /etc/systemd/system/journalctl-vacuum.timer
+    mode: '0644'
+
+- name: Enable journal rotation timer
+  systemd_service:
+    name: journalctl-vacuum.timer
+    daemon_reload: true
+    enabled: true
+    state: started

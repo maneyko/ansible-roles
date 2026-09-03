@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: Trim the systemd journal on a daily timer
+    description: >-
+      Installs journalctl-vacuum.service and its timer. The unit name is the
+      one the fractal hosts already use, where a central daily-tasks.sh drives
+      it; the timer here is for hosts that have no orchestrator of their own.
+    options:
+      journald_vacuum_time:
+        type: str
+        default: 2d
+        description: >-
+          Passed to `journalctl --vacuum-time`, so anything journalctl accepts:
+          2d, 4w. Only meaningful where the journal is persistent. With
+          /var/log/journal absent journald keeps logs under /run instead, and a
+          reboot discards them whatever this is set to.

@@ -11,6 +11,7 @@ Personal Ansible collection.
 | `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
 | `baresip` | Headless SIP client, built from source |
 | `ntfy_server` | ntfy behind NGINX, as a pub-sub notification server |
+| `journald_vacuum` | Trim the systemd journal on a daily timer |
 
 `github_install_binary`, `uv`, `rv` and `lego` are portable — nothing in them
 names a particular host. The other three describe one machine, and are here

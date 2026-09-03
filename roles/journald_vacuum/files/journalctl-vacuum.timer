@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily journal rotation
+
+[Timer]
+Unit=journalctl-vacuum.service
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

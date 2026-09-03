@@ -1,0 +1,6 @@
+[Unit]
+Description=Rotate journalctl logs
+
+[Service]
+Type=oneshot
+ExecStart=journalctl --vacuum-time={{ journald_vacuum_time }}
