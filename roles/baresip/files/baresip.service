@@ -1,6 +1,12 @@
 [Unit]
 Description=Headless SIP Client (baresip)
 After=network-online.target
+# The mqtt module connects once at startup and, on a refused connection,
+# unloads itself and never retries -- baresip then runs registered and silent,
+# publishing no events at all. Wants rather than Requires: without the broker
+# baresip is still worth running for SIP registration and MWI.
+Wants=mosquitto.service
+After=mosquitto.service
 
 [Service]
 User=baresip
