@@ -1,6 +1,13 @@
 # The certificate for services belonging to the host rather than to a site of
 # their own -- ntfy, pyapp, the catch-all server. Sites bring their own
 # ssl-<domain>.conf.
+
+# The listen lines belong here: every server block that includes this file has
+# no other one, so without them nginx defaults them to port 80 and nothing
+# answers on 443.
+listen 443 ssl;
+listen [::]:443 ssl;
+
 ssl_certificate     /etc/lego/certificates/{{ nginx_common_cert_domain }}.crt;
 ssl_certificate_key /etc/lego/certificates/{{ nginx_common_cert_domain }}.key;
 
