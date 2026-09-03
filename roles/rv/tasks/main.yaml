@@ -83,6 +83,7 @@
   copy:
     src:  rubygems_plugin.rb
     dest: "{{ item }}/lib/ruby/site_ruby/rubygems_plugin.rb"
+    mode: '0644'
 
 # rv extracts the tarball as root, so the interpreter arrives root:root 0755 and
 # no group member can install a gem into it. Directories become group-writable
