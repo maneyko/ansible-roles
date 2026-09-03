@@ -88,14 +88,16 @@
 # no group member can install a gem into it. Directories become group-writable
 # and setgid, which is enough to create, replace and delete gems; the shipped
 # files stay read-only, so sharing a ruby does not mean sharing the ability to
-# rewrite its stdlib. Gem files are the exception: the hook above keeps them
-# group-writable, so a gem can be repaired in place and not only replaced.
+# rewrite its stdlib. Gem files are the exception, so a gem can be repaired in
+# place and not only replaced: the hook above covers gems installed later, the
+# last line here the ones rv's own tarball ships.
 - name: Make installed rubies group-writable
   changed_when: false
   shell: |
     chgrp -R rv {{ rv_home }}/rubies
     find {{ rv_home }}/rubies -type d -exec chmod g+rwxs {} +
     find {{ rv_home }}/rubies -type f -exec chmod g+r {} +
+    find {{ rv_home }}/rubies/*/lib/ruby/gems -type f -exec chmod g+rw {} +
 
 - name: Link rv rubies directory
   file:
