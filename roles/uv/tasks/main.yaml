@@ -41,6 +41,13 @@
 # group, without any of them naming a UV_ variable. Ansible cannot rely on the
 # equivalent shell function: exports survive into a module's subprocess, shell
 # functions do not, which is how the cache came to be group-readable only.
+#
+# UV_LINK_MODE=copy because uv hardlinks cache entries into venvs by default,
+# and a hardlink's owner and mode *are* the cache entry's. An app that hands its
+# own checkout to its own group -- pyapp does, and its .venv sits inside that
+# checkout -- rewrites the shared entries out from under every other member of
+# this group. A shared cache and per-app venv ownership cannot both have the
+# same inode; copies cost tens of MB and end the argument.
 - name: Install uv shims
   loop: [uv, uvx]
   copy:
@@ -52,6 +59,7 @@
       export UV_CACHE_DIR={{ uv_home }}/cache
       export UV_PYTHON_INSTALL_DIR={{ uv_home }}/python
       export UV_PYTHON_BIN_DIR={{ uv_home }}/py-bin
+      export UV_LINK_MODE=copy
       exec {{ uv_home }}/libexec/bin/{{ item }} "$@"
 
 # Superseded by the shim, which every caller reaches without sourcing anything.
