@@ -7,14 +7,15 @@ Personal Ansible collection.
 | `github_install_binary` | Install a binary from a GitHub release tarball |
 | `uv` | Install `uv` plus a shared, group-writable Python toolchain |
 | `rv` | Install `rv` plus a shared, group-writable Ruby toolchain |
+| `bun` | Install `bun` plus a shared, group-writable module cache |
 | `nginx_common` | The TLS snippets every NGINX site includes |
 | `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
 | `baresip` | Headless SIP client, built from source |
 | `ntfy_server` | ntfy behind NGINX, as a pub-sub notification server |
 | `journald_vacuum` | Trim the systemd journal on a daily timer |
 
-`github_install_binary`, `uv`, `rv` and `lego` are portable — nothing in them
-names a particular host. The other three describe one machine, and are here
+`github_install_binary`, `uv`, `rv`, `bun` and `lego` are portable — nothing in
+them names a particular host. The other three describe one machine, and are here
 because the reasoning below is worth reading rather than because they offer a
 stable interface: `nginx_common` deletes Debian's default site and tracks
 certbot's `options-ssl-nginx.conf` from `main`, `ntfy_server` wants an NGINX
@@ -50,7 +51,7 @@ ansible-galaxy collection install -r requirements.yml
 
 ## How `uv` is wired up
 
-`rv` is wired up the same way; read `uv` below and substitute.
+`rv` and `bun` are wired up the same way; read `uv` below and substitute.
 
 The real binary lives at `/opt/uv/libexec/bin/uv` and `/usr/local/bin/uv` is a
 shim:
@@ -137,9 +138,56 @@ consulted by `rv` at all — `rv ruby dir` ignored them and only the explicit
 `~/.local/share/rv`. The shim exports the variable that works, so every `rv`
 subcommand now agrees on where rubies live.
 
+## Where `bun` differs from `uv`
+
+**The hardlink hazard is the same one, and the lever is worse.** bun's install
+backend defaults to `hardlink` on Linux, so a `node_modules` entry and its cache
+entry are one inode, exactly as an unconfigured uv venv and its cache are. There
+is no `BUN_LINK_MODE`: `--backend` is reachable from `bunfig.toml`, which is
+either per-user or an override of the project's own, and otherwise only from the
+command line. The shim uses `BUN_OPTIONS`, bun's `NODE_OPTIONS` — flags
+prepended to every command line — to say `--backend=copyfile`.
+
+Know what that buys and what it costs. Unrecognised flags in `BUN_OPTIONS` are
+ignored *silently*, by `bun install` as much as by `bun run`, so a renamed flag
+would put the cache quietly back on hardlinks rather than fail. The check is a
+link count:
+
+```sh
+bun install && stat -c %h node_modules/<pkg>/<file>
+```
+
+`1` is copies. Anything higher is the shared cache inside somebody's checkout.
+
+**The umask does not reach directories, and one of them is shared.** bun honours
+it for files — cache entries land `664` — but creates directories `0755` from a
+hardcoded mode. Most of them are a package's own subtree under a cache root that
+*is* group-writable, so a second member can still add entries beside them.
+`cache/.tmp` is the exception: every writer stages extractions in that one
+directory, so whoever installs first owns it and the next member of the group
+gets `EACCES accessing temporary directory` before it downloads anything. The
+role creates `.tmp` itself, `g+srw,o=` like the rest; bun reuses the directory
+and leaves the mode alone, including across a `bun pm cache rm`.
+
+What that leaves is `bun pm cache rm` run by someone who did not write the
+entries — it clears what it owns and stops at the first `0755` directory
+belonging to another member. There is no hook to fix this from, the way the
+RubyGems one fixes it for `rv`; a sweep in this role would only hold until the
+next install. Clear the cache with `sudo rm -rf`, and let the next play run put
+`.tmp` back.
+
+**Two smaller things the release archive forces.** It is a zip, which `tar`
+cannot read and a Debian cloud image has no `unzip` for, so the role installs
+one — the only role here that installs a package for its own binary. And the zip
+holds `bun` alone: `bunx` is the same executable reading its own `argv[0]`,
+which bun's installer creates as a symlink and so does this role.
+
+**There is no toolchain to install.** `uv python install` and `rv ruby install`
+have no counterpart, because bun is the runtime. The role ends at the shims.
+
 ## How `github_install_binary` works
 
-`uv`, `rv` and `lego` all install the same way: fetch a release tarball from
+`uv`, `rv`, `bun` and `lego` all install the same way: fetch a release archive from
 GitHub, unpack it in a scratch directory, move the binaries out, delete the rest.
 The role takes a repo and a `jq` filter that picks the right asset for the
 architecture, and `github-download-release.sh` does the fetching.
@@ -168,7 +216,7 @@ one.
   uses `sudo --login`, which adds a second shell expansion pass that strips
   quoting and eats `$uname_m`.
 - **`# noqa: risky-file-permissions` on the dest directory.** The task only
-  asserts the directory exists. `uv` and `rv` pass a dest they created
+  asserts the directory exists. `uv`, `rv` and `bun` pass a dest they created
   `g+srw,o=` themselves, so a `mode:` here would fight them and both roles would
   report `changed` against each other forever.
 - **`# noqa: risky-shell-pipe` on the install.** `set -o pipefail` would fail
@@ -296,5 +344,5 @@ proxies to is passed in as a variable rather than committed.
 `ansible-galaxy role install` treats a git repo as exactly one role, so a repo
 holding several roles cannot be consumed through the `roles:` key of a
 requirements file. Collections are the supported unit for shipping several
-roles from one repo, and they namespace generic names like `uv`, `rv` and
-`lego`, which would otherwise collide.
+roles from one repo, and they namespace generic names like `uv`, `rv`, `bun`
+and `lego`, which would otherwise collide.

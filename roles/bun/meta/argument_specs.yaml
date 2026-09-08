@@ -1,0 +1,18 @@
+---
+argument_specs:
+  main:
+    short_description: Install bun and a shared module cache under {{ bun_home }}
+    options:
+      bun_users:
+        type: list
+        elements: str
+        default: []
+        description: >-
+          Users added to the bun group. Membership is required to run bun at
+          all, not just to write the cache: the binary lives inside bun_home.
+      bun_home:
+        type: path
+        default: /opt/bun
+        description: >-
+          Group-writable root for the bun binary and its module cache.
+          /usr/local/bin/bun is a shim that points every caller here.

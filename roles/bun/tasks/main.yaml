@@ -1,0 +1,82 @@
+---
+# bun publishes zips and nothing else; tar cannot read them and a Debian cloud
+# image does not ship unzip.
+- name: Install unzip
+  apt:
+    pkg: [unzip]
+
+- name: Create bun group
+  group:
+    name: bun
+
+- name: Add users to bun group
+  loop: "{{ bun_users }}"
+  user:
+    name: "{{ item }}"
+    groups: bun
+    append: true
+
+# o= on bun_home is deliberate: with the real binary inside it, bun is unusable
+# by anyone outside the bun group, rather than usable but unable to write the
+# cache. Group-writable because a shared cache has many writers.
+#
+# cache/.tmp is where bun stages every extraction before renaming it into the
+# cache, so all writers share one directory rather than a subtree each. bun
+# creates it 0755 whatever the umask says -- directory modes are hardcoded, only
+# file modes take the shim's 0002 -- which leaves the second member of the group
+# to run an install with `EACCES accessing temporary directory`. Creating it
+# here is the whole fix: bun reuses the directory and keeps the mode.
+- name: Create bun directories
+  loop:
+    - "{{ bun_home }}"
+    - "{{ bun_home }}/cache"
+    - "{{ bun_home }}/cache/.tmp"
+    - "{{ bun_home }}/libexec/bin"
+  file:
+    state: directory
+    path:  "{{ item }}"
+    mode:  'g+srw,o='
+    group: bun
+
+# The asset is named for the architecture bun calls x64 and uname calls x86_64;
+# aarch64 they agree on. Matched whole rather than by prefix, because
+# -baseline, -musl and -android would all pass a startswith.
+- name: Install bun binary
+  include_role:
+    name: maneyko.roles.github_install_binary
+  vars:
+    github_install_binary_repo:    oven-sh/bun
+    github_install_binary_exec:    bun
+    github_install_binary_dest:    "{{ bun_home }}/libexec/bin"
+    github_install_binary_filter: . == "bun-linux-\($uname_m | sub("x86_64"; "x64")).zip"
+    github_install_binary_extract: unzip -q
+    github_install_binary_find:    find */bun
+
+# bunx is the same binary under a name it reads out of argv[0], which is how
+# bun's own installer ships it. The release zip holds only bun.
+- name: Link bunx to the bun binary
+  file:
+    src:   bun
+    dest:  "{{ bun_home }}/libexec/bin/bunx"
+    state: link
+
+# The only thing on PATH, for the same reasons as the uv shim.
+#
+# BUN_OPTIONS is bun's NODE_OPTIONS -- flags prepended to every command line --
+# and the only way to reach --backend from the environment. copyfile because
+# bun otherwise hardlinks cache entries into node_modules, and a hardlink's
+# owner and mode *are* the cache entry's. An app that hands its own checkout to
+# its own group rewrites the shared entries out from under every other member
+# of this group. A shared cache and per-app node_modules ownership cannot have
+# the same inode; copies cost tens of MB and end the argument.
+- name: Install bun shims
+  loop: [bun, bunx]
+  copy:
+    dest: /usr/local/bin/{{ item }}
+    mode: '0755'
+    content: |
+      #!/bin/sh
+      umask 0002
+      export BUN_INSTALL_CACHE_DIR={{ bun_home }}/cache
+      export BUN_OPTIONS=--backend=copyfile
+      exec {{ bun_home }}/libexec/bin/{{ item }} "$@"
