@@ -12,7 +12,6 @@ Personal Ansible collection.
 | `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
 | `baresip` | Headless SIP client, built from source |
 | `ntfy_server` | ntfy behind NGINX, as a pub-sub notification server |
-| `journald_vacuum` | Trim the systemd journal on a daily timer |
 
 `github_install_binary`, `uv`, `rv`, `bun` and `lego` are portable — nothing in
 them names a particular host. The other three describe one machine, and are here
@@ -295,20 +294,7 @@ so renewal driven from it can never retry.
 
 `/etc/lego` is hardcoded throughout, in the role and in the renewal script.
 
-## The two smaller roles
-
-**`journald_vacuum`** installs `journalctl-vacuum.service` and a daily timer.
-The retention only means anything where the journal is **persistent** — with
-`/var/log/journal` absent, journald keeps logs under `/run` and a reboot
-discards them whatever the retention says, which would make the whole role
-decorative. The arg spec says so.
-
-`journald_vacuum_time` is a variable because there are already two answers, `7d`
-on the fractal hosts and `2d` on a 10 GiB cloud disk. The schedule is not,
-because there is still only one. The role is named for what it manages, matching
-`nginx_common` and `ntfy_server`, while the *units* keep the
-`journalctl-vacuum` names the fractal hosts already use — so the same unit is
-called the same thing on every host, whatever the role wrapping it is called.
+## How `ntfy_server` gets its certificate
 
 **`ntfy_server`** puts ntfy behind NGINX. It takes its certificate include as
 `ntfy_server_cert_snippet`, defaulting to `snippets/default-cert.conf`, so
