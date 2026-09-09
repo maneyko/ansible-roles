@@ -49,11 +49,6 @@
       export RUBIES_PATH={{ rv_home }}/rubies
       exec {{ rv_home }}/libexec/bin/{{ item }} "$@"
 
-- name: Remove the rv profile
-  file:
-    path: /etc/profile.d/rv.sh
-    state: absent
-
 - name: Install rv Ruby
   command:
     creates: "{{ rv_home }}/rubies/*"

@@ -62,12 +62,6 @@
       export UV_LINK_MODE=copy
       exec {{ uv_home }}/libexec/bin/{{ item }} "$@"
 
-# Superseded by the shim, which every caller reaches without sourcing anything.
-- name: Remove the uv profile
-  file:
-    path: /etc/profile.d/uv.sh
-    state: absent
-
 - name: Install uv Python
   command:
     creates: "{{ uv_home }}/python/*"
