@@ -12,14 +12,16 @@ Personal Ansible collection.
 | `lego` | ACME certificates under `/etc/lego`, renewed by a daily timer |
 | `baresip` | Headless SIP client, built from source |
 | `ntfy_server` | ntfy behind NGINX, as a pub-sub notification server |
+| `cloudflared` | A Cloudflare Tunnel publishing local services |
 
-`github_install_binary`, `uv`, `rv`, `bun` and `lego` are portable — nothing in
-them names a particular host. The other three describe one machine, and are here
-because the reasoning below is worth reading rather than because they offer a
-stable interface: `nginx_common` deletes Debian's default site and tracks
-certbot's `options-ssl-nginx.conf` from `main`, `ntfy_server` wants an NGINX
-snippet it does not ship, and `baresip` builds from source against a
-hardcoded MQTT topic. Expect to fork those three rather than configure them.
+`github_install_binary`, `uv`, `rv`, `bun`, `lego` and `cloudflared` are
+portable — nothing in them names a particular host. The other three describe one
+machine, and are here because the reasoning below is worth reading rather than
+because they offer a stable interface: `nginx_common` deletes Debian's default
+site and tracks certbot's `options-ssl-nginx.conf` from `main`, `ntfy_server`
+wants an NGINX snippet it does not ship, and `baresip` builds from source
+against a hardcoded MQTT topic. Expect to fork those three rather than
+configure them.
 
 Each role's inputs are declared in `roles/<name>/meta/argument_specs.yaml` and
 validated before the role runs:
@@ -301,6 +303,31 @@ so renewal driven from it can never retry.
 `nginx_common` is the *default* provider rather than a hard prerequisite — the
 role's only tie to it was two `include` lines of one file. The upstream it
 proxies to is passed in as a variable rather than committed.
+
+## What `cloudflared` does not do
+
+**It never creates the tunnel.** `cloudflared tunnel create` needs the
+`cert.pem` that `cloudflared tunnel login` fetches through a browser, which is
+not something a play can do. So the tunnel is made out of band and the role is
+handed the `<uuid>.json` it produced. That document carries its own `TunnelID`,
+so nothing has to pass the id alongside it — the same bargain as the account
+TOMLs in `maneyko.imap_cloud_sync`.
+
+**Only locally-managed tunnels.** A tunnel created in the Zero Trust dashboard
+keeps its ingress in the dashboard and is run with `--token <blob>`; there is no
+`config.yml` to write and this role would fight it. The two kinds look alike
+until you try to configure one with the other's mechanism.
+
+**It writes no DNS.** A hostname reaches the tunnel through a CNAME at
+`<uuid>.cfargotunnel.com`, which lives in Terraform. `cloudflared tunnel route
+dns` would write the same record behind Terraform's back.
+
+**It closes no other doors.** On a host that also listens publicly, the tunnel
+is an *additional* way in, not a replacement — the service it fronts should be
+bound to loopback if the tunnel is meant to be the only path. That is the whole
+difference between a host behind NAT and one with a public IP, and it is the
+reason Cloudflare Access in front of a tunnel is airtight while Access in front
+of a public listener is a front door with the back door open.
 
 ## House style
 
