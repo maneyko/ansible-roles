@@ -1,0 +1,58 @@
+---
+- name: Add cloudflared repository
+  deb822_repository:
+    name: cloudflared
+    types: deb
+    uris: https://pkg.cloudflare.com/cloudflared
+    suites: any
+    components: main
+    signed_by: https://pkg.cloudflare.com/cloudflare-main.gpg
+
+- name: Install cloudflared
+  apt:
+    update_cache: true
+    pkg: [cloudflared]
+
+- name: Create cloudflared credentials directory
+  file:
+    state: directory
+    path: /root/.cloudflared
+    mode: '0700'
+
+# cloudflared resolves credentials-file itself and will not read one it
+# considers world-readable.
+- name: Write cloudflared tunnel credentials
+  no_log: true
+  notify: Restart cloudflared
+  copy:
+    content: "{{ cloudflared_credentials | to_json }}"
+    dest: /root/.cloudflared/{{ cloudflared_credentials.TunnelID }}.json
+    mode: '0600'
+
+- name: Create cloudflared config directory
+  file:
+    state: directory
+    path: /etc/cloudflared
+    mode: '0755'
+
+- name: Install cloudflared config
+  no_log: true
+  notify: Restart cloudflared
+  template:
+    src:  config.yml.j2
+    dest: /etc/cloudflared/config.yml
+    mode: '0644'
+
+- name: Install cloudflared unit
+  notify: Restart cloudflared
+  copy:
+    src:  cloudflared.service
+    dest: /etc/systemd/system/cloudflared.service
+    mode: '0644'
+
+- name: Enable cloudflared
+  systemd_service:
+    name: cloudflared
+    daemon_reload: true
+    enabled: true
+    state: started

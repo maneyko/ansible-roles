@@ -1,0 +1,12 @@
+tunnel: {{ cloudflared_credentials.TunnelID }}
+credentials-file: /root/.cloudflared/{{ cloudflared_credentials.TunnelID }}.json
+
+ingress:
+{% for rule in cloudflared_ingress %}
+
+  - hostname: {{ rule.hostname }}
+    service: {{ rule.service }}
+{% endfor %}
+
+  # cloudflared refuses to start on a config whose last rule names a hostname.
+  - service: http_status:404

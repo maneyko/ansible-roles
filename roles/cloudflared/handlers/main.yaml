@@ -1,0 +1,6 @@
+---
+- name: Restart cloudflared
+  systemd_service:
+    name: cloudflared
+    daemon_reload: true
+    state: restarted

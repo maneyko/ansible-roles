@@ -1,0 +1,42 @@
+---
+argument_specs:
+  main:
+    short_description: Publish local services through a Cloudflare Tunnel
+    description: >-
+      Runs a locally-managed tunnel: the ingress lives in
+      /etc/cloudflared/config.yml on the host, not in the Zero Trust dashboard.
+      A dashboard-managed tunnel is a different thing and this role will not
+      drive one. The tunnel itself is created out of band with
+      `cloudflared tunnel create`, which is what produces the credentials
+      below.
+    options:
+      cloudflared_credentials:
+        type: dict
+        required: true
+        no_log: true
+        description: >-
+          The <uuid>.json document `cloudflared tunnel create` writes,
+          verbatim. Deliberately no suboptions: the shape belongs to
+          cloudflared. The one key the role reads is TunnelID, which names
+          both the tunnel and the file it is written to -- so nothing has to
+          carry the id alongside this.
+
+      cloudflared_ingress:
+        type: list
+        required: true
+        no_log: true
+        elements: dict
+        description: >-
+          Ingress rules in order, each a hostname and the local service it
+          reaches. The catch-all every config must end with is appended by the
+          role. no_log because a hostname can be the only thing guarding what
+          it points at.
+        options:
+          hostname:
+            type: str
+            required: true
+            description: Public hostname, which must have a DNS record aimed at this tunnel.
+          service:
+            type: str
+            required: true
+            description: Local target, as a cloudflared service URL -- http://, https://, ssh://, tcp://.

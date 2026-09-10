@@ -1,0 +1,12 @@
+[Unit]
+Description=Cloudflare Tunnel
+After=network.target
+
+[Service]
+Type=notify
+ExecStart=cloudflared tunnel --config /etc/cloudflared/config.yml --no-autoupdate run
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
